@@ -130,6 +130,10 @@ interface Typography {
   lineHeight: string | Alias;
 }
 
+/**
+ * This class represents a token
+ * @see https://design-tokens.github.io/community-group/format/#design-token-0
+ */
 export class Token {
   name: string;
   description?: string;
@@ -138,6 +142,7 @@ export class Token {
   extensions = new Map<string, unknown>();
   parent?: Group;
 
+  /** Create a new instance from a JSON */
   static fromJson(name: string, json: JsonToken) {
     const { $value, $description, $type, $extensions } = json;
 
@@ -168,11 +173,13 @@ export class Token {
     return token;
   }
 
+  /** Create a new token */
   constructor(name: string, value: Value = null) {
     this.name = name;
     this._value = value;
   }
 
+  /** The root group where the token is */
   get root(): Group | undefined {
     if (!this.parent) {
       return undefined;
@@ -185,10 +192,15 @@ export class Token {
     return root;
   }
 
+  /** The full path name */
   get path(): string {
     return this.parent ? `${this.parent.path}.${this.name}` : this.name;
   }
 
+  /**
+   * The type of the token
+   * @see https://design-tokens.github.io/community-group/format/#types
+   */
   set type(type: Type) {
     this._type = type;
   }
@@ -233,6 +245,7 @@ export class Token {
     throw new Error("Invalid value");
   }
 
+  /** The token value */
   set value(value: Value) {
     this._value = value;
   }
@@ -280,6 +293,7 @@ export class Token {
     return root.get(path) as Token | undefined;
   }
 
+  /** Convert the token to JSON */
   toJson(): JsonToken {
     const json: JsonToken = {
       $value: this.value,
@@ -300,6 +314,7 @@ export class Token {
     return json;
   }
 
+  /** Convert the token to string */
   toString() {
     JSON.stringify(this.toJson(), null, 2);
   }
@@ -307,6 +322,10 @@ export class Token {
 
 type Child = Token | Group;
 
+/**
+ * This class represents a group
+ * @see https://design-tokens.github.io/community-group/format/#groups-0
+ */
 export class Group {
   name: string;
   type?: Type;
@@ -314,6 +333,7 @@ export class Group {
   children = new Map<string, Child>();
   parent?: Group;
 
+  /** Create a group and nested groups and tokens from a JSON */
   static fromJson(name: string, json: JsonTokenGroup): Group {
     const { $description, $type, ...children } = json;
 
@@ -349,15 +369,34 @@ export class Group {
     return group;
   }
 
+  /** Create a new group */
   constructor(name = "", tokens: Child[] = []) {
     this.name = name;
     this.add(...tokens);
   }
 
+  /** The path of the group */
   get path(): string {
     return this.parent ? `${this.parent.path}.${this.name}` : this.name;
   }
 
+  /** Return all tokens and subtokens */
+  get all(): Token[] {
+    const tokens: Token[] = [];
+
+    for (const child of this.children.values()) {
+      if (child instanceof Token) {
+        tokens.push(child);
+        continue;
+      }
+
+      tokens.push(...child.all);
+    }
+
+    return tokens;
+  }
+
+  /** Add new childs to the group (tokens or groups) */
   add(...childrens: Child[]) {
     childrens.forEach((child) => {
       child.parent = this;
@@ -365,6 +404,7 @@ export class Group {
     });
   }
 
+  /** Return a child (token or group) from a path */
   getChild(path: string): Child | undefined {
     const piece = path.match(/^([^.]+)(?:\.(.*))?$/);
 
@@ -382,11 +422,13 @@ export class Group {
     return (child instanceof Token && !childPath) ? child : undefined;
   }
 
+  /** Return a token from a path */
   get(path: string): Token | undefined {
     const child = this.getChild(path);
     return (child instanceof Token) ? child : undefined;
   }
 
+  /** Convert the group (and its children) to JSON */
   toJson(): JsonTokenGroup {
     const group: JsonTokenGroup = {};
 
@@ -405,11 +447,16 @@ export class Group {
     return group;
   }
 
+  /** Convert the group (and its children) to string */
   toString() {
     JSON.stringify(this.toJson(), null, 2);
   }
 }
 
-export default function create(json: Record<string, unknown>): Group {
+export default function create(json: Record<string, unknown> | string): Group {
+  if (typeof json === "string") {
+    json = JSON.parse(json);
+  }
+
   return Group.fromJson("", json as JsonTokenGroup);
 }

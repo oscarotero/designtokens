@@ -16,7 +16,14 @@ const tokens = parse(json_tokens);
 // Get a token
 const mainColor = tokens.get("colors.main");
 console.log(mainColor.value); // Get the value
-mainColor.value = "blue"; // Change the value
+mainColor.value = "#112233"; // Change the value
+
+// Manipulate tokens
+tokens.all.forEach((token) => {
+  if (token.type === "color") {
+    token.value = editColor(token.value);
+  }
+});
 
 // Export to JSON or stringifyed JSON
 const json = tokens.toJson();
