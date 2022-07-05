@@ -1,0 +1,12 @@
+{
+  "shadow-token": {
+    "$type": "shadow",
+    "$value": {
+      "color": "#00000088",
+      "offsetX": "0.5rem",
+      "offsetY": "0.5rem",
+      "blur": "1.5rem",
+      "spread": "0rem"
+    }
+  }
+}
