@@ -299,6 +299,10 @@ export class Token {
 
     return json;
   }
+
+  toString() {
+    JSON.stringify(this.toJson(), null, 2);
+  }
 }
 
 type Child = Token | Group;
@@ -399,6 +403,10 @@ export class Group {
     }
 
     return group;
+  }
+
+  toString() {
+    JSON.stringify(this.toJson(), null, 2);
   }
 }
 
