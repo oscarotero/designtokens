@@ -22,6 +22,7 @@ type Type =
   | "dimension"
   | "fontFamily"
   | "fontWeight"
+  | "fontStyle"
   | "duration"
   | "strokeStyle"
   | "border"
@@ -54,6 +55,7 @@ type FontWeight =
   | "heavy"
   | "extra-black"
   | "ultra-black";
+type FontStyle = "normal" | "italic";
 type Duration = string;
 type Alias = string;
 type CubicBezier = [number, number, number, number];
@@ -71,6 +73,7 @@ type Value =
   | Dimension
   | FontFamily
   | FontWeight
+  | FontStyle
   | Duration
   | StrokeStyle
   | Border
@@ -130,56 +133,20 @@ interface Typography {
   lineHeight: string | Alias;
 }
 
-/**
- * This class represents a token
- * @see https://design-tokens.github.io/community-group/format/#design-token-0
- */
-export class Token {
-  name: string;
+/** Base class extended by Token and Group */
+class Node {
+  #parent?: Group;
   description?: string;
-  _value: Value;
-  _type?: Type;
-  extensions = new Map<string, unknown>();
-  parent?: Group;
 
-  /** Create a new instance from a JSON */
-  static fromJson(name: string, json: JsonToken) {
-    const { $value, $description, $type, $extensions } = json;
-
-    if (!$value) {
-      throw new Error("Invalid token. Missing $value property");
-    }
-
-    const token = new Token(name, $value);
-
-    if (typeof $description === "string") {
-      token.description = $description;
-    } else if ($description) {
-      throw new Error("Invalid type for $description");
-    }
-
-    if (typeof $type === "string") {
-      token.type = $type;
-    } else if ($type) {
-      throw new Error("Invalid type for $type");
-    }
-
-    if ($extensions) {
-      for (const [name, value] of Object.entries($extensions)) {
-        token.extensions.set(name, value);
-      }
-    }
-
-    return token;
+  set parent(parent: Group | undefined) {
+    this.#parent = parent;
   }
 
-  /** Create a new token */
-  constructor(name: string, value: Value = null) {
-    this.name = name;
-    this._value = value;
+  get parent(): Group | undefined {
+    return this.#parent;
   }
 
-  /** The root group where the token is */
+  /** The root of the node */
   get root(): Group | undefined {
     if (!this.parent) {
       return undefined;
@@ -190,6 +157,70 @@ export class Token {
       root = root.parent;
     }
     return root;
+  }
+}
+
+/**
+ * This class represents a token
+ * @see https://design-tokens.github.io/community-group/format/#design-token-0
+ */
+export class Token extends Node {
+  name: string;
+  value: Value;
+  #type?: Type;
+  extensions = new Map<string, unknown>();
+  extra = new Map<string, unknown>();
+
+  /** Create a new instance from a JSON */
+  static fromJson(name: string, json: JsonToken) {
+    if (json.$value === undefined) {
+      throw new Error("Invalid token. Missing $value property");
+    }
+
+    const token = new Token(name, json.$value);
+
+    for (const [key, value] of Object.entries(json)) {
+      if (value === undefined || value === null) {
+        continue;
+      }
+
+      switch (key) {
+        case "$value":
+          break;
+
+        case "$description":
+          if (typeof value !== "string") {
+            throw new Error("Invalid type for $description");
+          }
+          token.description = value;
+          break;
+
+        case "$type":
+          if (typeof value !== "string") {
+            throw new Error("Invalid type for $type");
+          }
+          token.type = value as Type;
+          break;
+
+        case "$extensions":
+          for (const [name, content] of Object.entries(value)) {
+            token.extensions.set(name, content);
+          }
+          break;
+        default:
+          token.extra.set(key, value);
+          break;
+      }
+    }
+
+    return token;
+  }
+
+  /** Create a new token */
+  constructor(name: string, value: Value = null) {
+    super();
+    this.name = name;
+    this.value = value;
   }
 
   /** The full path name */
@@ -202,16 +233,16 @@ export class Token {
    * @see https://design-tokens.github.io/community-group/format/#types
    */
   set type(type: Type) {
-    this._type = type;
+    this.#type = type;
   }
 
   get type(): Type {
-    if (this._type) {
-      return this._type;
+    if (this.#type) {
+      return this.#type;
     }
 
-    if (typeof this._value === "string") {
-      const token = this.#resolveAlias(this._value);
+    if (typeof this.value === "string") {
+      const token = this.#resolveAlias(this.value);
       if (token) {
         return token.type;
       }
@@ -245,13 +276,8 @@ export class Token {
     throw new Error("Invalid value");
   }
 
-  /** The token value */
-  set value(value: Value) {
-    this._value = value;
-  }
-
-  get value(): Value {
-    return this.#resolveValue(this._value);
+  get resolvedValue(): Value {
+    return this.#resolveValue(this.value);
   }
 
   #resolveValue(value: Value): Value {
@@ -299,8 +325,8 @@ export class Token {
       $value: this.value,
     };
 
-    if (this._type) {
-      json.$type = this._type;
+    if (this.#type) {
+      json.$type = this.#type;
     }
 
     if (this.description) {
@@ -326,43 +352,45 @@ type Child = Token | Group;
  * This class represents a group
  * @see https://design-tokens.github.io/community-group/format/#groups-0
  */
-export class Group {
+export class Group extends Node {
   name: string;
   type?: Type;
-  description?: string;
   children = new Map<string, Child>();
-  parent?: Group;
 
   /** Create a group and nested groups and tokens from a JSON */
   static fromJson(name: string, json: JsonTokenGroup): Group {
-    const { $description, $type, ...children } = json;
-
     const group = new Group(name);
 
-    if (typeof $description === "string") {
-      group.description = $description;
-    } else if ($description) {
-      throw new Error("Invalid type for $description");
-    }
-
-    if (typeof $type === "string") {
-      group.type = $type;
-    } else if ($type) {
-      throw new Error("Invalid type for $type");
-    }
-
-    for (const [name, child] of Object.entries(children)) {
-      if (!child || typeof child === "string") {
+    for (const [key, value] of Object.entries(json)) {
+      if (value === undefined || value === null) {
         continue;
       }
 
-      // Is a Token
-      if ("$value" in child) {
-        const token = Token.fromJson(name, child as JsonToken);
-        group.add(token);
-      } else {
-        const subgroup = Group.fromJson(name, child as JsonTokenGroup);
-        group.add(subgroup);
+      switch (key) {
+        case "$description":
+          if (typeof value !== "string") {
+            throw new Error("Invalid type for $description");
+          }
+          group.description = value;
+          break;
+
+        case "$type":
+          if (typeof value !== "string") {
+            throw new Error("Invalid type for $type");
+          }
+          group.type = value as Type;
+          break;
+
+        default:
+          if (typeof value === "object") {
+            // Is a Token
+            if ("$value" in value) {
+              group.add(Token.fromJson(key, value as JsonToken));
+            } else {
+              group.add(Group.fromJson(key, value as JsonTokenGroup));
+            }
+          }
+          break;
       }
     }
 
@@ -371,6 +399,7 @@ export class Group {
 
   /** Create a new group */
   constructor(name = "", tokens: Child[] = []) {
+    super();
     this.name = name;
     this.add(...tokens);
   }
