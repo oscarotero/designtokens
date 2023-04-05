@@ -406,7 +406,7 @@ export class Group extends Node {
 
   /** The path of the group */
   get path(): string {
-    return this.parent ? `${this.parent.path}.${this.name}` : this.name;
+    return this.parent?.name ? `${this.parent.path}.${this.name}` : this.name;
   }
 
   /** Return all tokens and subtokens */
