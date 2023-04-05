@@ -482,10 +482,43 @@ export class Group extends Node {
   }
 }
 
-export default function create(json: Record<string, unknown> | string): Group {
+export default function create(
+  json: Record<string, unknown> | string,
+  format?: "style-dictionary",
+): Group {
   if (typeof json === "string") {
     json = JSON.parse(json);
   }
 
+  if (format === "style-dictionary") {
+    json = fromStyleDictionary(json);
+  }
+
   return Group.fromJson("", json as JsonTokenGroup);
+}
+
+// Convert from Style dictionary format to Design Tokens format
+// deno-lint-ignore no-explicit-any
+function fromStyleDictionary(json: any): any {
+  if (Array.isArray(json)) {
+    return json.map(fromStyleDictionary);
+  }
+
+  if (typeof json === "object" && json !== null) {
+    return Object.fromEntries(
+      Object.entries(json).map(([key, value]) => {
+        switch (key) {
+          case "value":
+          case "type":
+          case "description":
+          case "extensions":
+            key = "$" + key;
+            break;
+        }
+        return [key, fromStyleDictionary(value)];
+      }),
+    );
+  }
+
+  return json;
 }
