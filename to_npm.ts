@@ -29,7 +29,7 @@ await build({
   outDir: "./npm",
   package: {
     name: "designtokens",
-    version: Deno.args[0],
+    version: "0.1.0",
     description:
       "Node package to parse and manipulate design tokens following the [DTCG](https://www.designtokens.org/) format.",
     homepage: "https://github.com/oscarotero/designtokens#readme",
