@@ -1,6 +1,6 @@
-# Design Tokens parser
+# Design Tokens
 
-Deno library to parse, manipulate and transform tokens format as
+Deno and Node library to parse, manipulate and transform tokens format as
 [Design Tokens Community Group](https://www.designtokens.org/) specifications.
 
 - [Current spec](https://design-tokens.github.io/community-group/format/)
@@ -8,7 +8,7 @@ Deno library to parse, manipulate and transform tokens format as
 ## Usage
 
 ```js
-import parse from "./mod.ts";
+import parse from "designtokens";
 import json_tokens from "./my-json-with-tokens.json" assert { type: "json" };
 
 const tokens = parse(json_tokens);
@@ -69,7 +69,7 @@ You can import tokens from the
 the input format in the second argument.
 
 ```js
-import parse from "./mod.ts";
+import parse from "designtokens";
 import style_dictionary_tokens from "./my-json-with-tokens.json" assert {
   type: "json",
 };

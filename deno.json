@@ -1,0 +1,14 @@
+{
+  "lock": false,
+  "tasks": {
+    "test": "deno test",
+    "npm": "deno run --unstable --allow-write --allow-read --allow-env --allow-net --allow-run to_npm.ts"
+  },
+  "fmt": {
+    "files": {
+      "exclude": [
+        "npm"
+      ]
+    }
+  }
+}
