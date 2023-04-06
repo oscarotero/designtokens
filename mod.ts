@@ -68,7 +68,6 @@ type Value =
   | Record<string, unknown>
   | unknown[]
   | null
-  | Alias
   | Color
   | Dimension
   | FontFamily
@@ -166,8 +165,8 @@ class Node {
  */
 export class Token extends Node {
   name: string;
-  value: Value;
-  #type?: Type;
+  $value: Value | Alias;
+  $type?: Type;
   extensions = new Map<string, unknown>();
   extra = new Map<string, unknown>();
 
@@ -199,7 +198,7 @@ export class Token extends Node {
           if (typeof value !== "string") {
             throw new Error("Invalid type for $type");
           }
-          token.type = value as Type;
+          token.$type = value as Type;
           break;
 
         case "$extensions":
@@ -217,10 +216,10 @@ export class Token extends Node {
   }
 
   /** Create a new token */
-  constructor(name: string, value: Value = null) {
+  constructor(name: string, $value: Value = null) {
     super();
     this.name = name;
-    this.value = value;
+    this.$value = $value;
   }
 
   /** The full path name */
@@ -233,16 +232,16 @@ export class Token extends Node {
    * @see https://design-tokens.github.io/community-group/format/#types
    */
   set type(type: Type) {
-    this.#type = type;
+    this.$type = type;
   }
 
   get type(): Type {
-    if (this.#type) {
-      return this.#type;
+    if (this.$type) {
+      return this.$type;
     }
 
-    if (typeof this.value === "string") {
-      const token = this.#resolveAlias(this.value);
+    if (typeof this.$value === "string") {
+      const token = this.#resolveAlias(this.$value);
       if (token) {
         return token.type;
       }
@@ -257,7 +256,8 @@ export class Token extends Node {
       parent = parent.parent;
     }
 
-    const type = typeof this.value;
+    const value = this.value;
+    const type = typeof value;
 
     switch (type) {
       case "string":
@@ -266,9 +266,9 @@ export class Token extends Node {
         return type;
 
       case "object":
-        return this.value === null
+        return value === null
           ? "null"
-          : Array.isArray(this.value)
+          : Array.isArray(value)
           ? "array"
           : "object";
     }
@@ -276,14 +276,17 @@ export class Token extends Node {
     throw new Error("Invalid value");
   }
 
-  get resolvedValue(): Value {
-    return this.#resolveValue(this.value);
+  set value(value: Value) {
+    this.$value = value;
+  }
+
+  get value(): Value {
+    return this.#resolveValue(this.$value);
   }
 
   #resolveValue(value: Value): Value {
     if (typeof value === "string") {
-      const token = this.#resolveAlias(value);
-      return token ? token.value : value;
+      return this.#resolveAlias(value)?.value ?? value;
     }
 
     if (Array.isArray(value)) {
@@ -316,17 +319,17 @@ export class Token extends Node {
       path = path.slice(root.name.length + 1);
     }
 
-    return root.get(path) as Token | undefined;
+    return root.get(path);
   }
 
   /** Convert the token to JSON */
   toJson(): JsonToken {
     const json: JsonToken = {
-      $value: this.value,
+      $value: this.$value,
     };
 
-    if (this.#type) {
-      json.$type = this.#type;
+    if (this.$type) {
+      json.$type = this.$type;
     }
 
     if (this.description) {

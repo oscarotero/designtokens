@@ -100,6 +100,8 @@ Deno.test("Aliases", () => {
   token.type = "color";
   const token2 = new Token("main", "{colors.primary}");
   group.add(token, token2);
-  assertEquals(token2.resolvedValue, token.resolvedValue);
+  assertEquals(token2.$value, "{colors.primary}");
+  assertEquals(token2.value, token.value);
+  assertEquals(token2.$type, undefined);
   assertEquals(token2.type, token.type);
 });
