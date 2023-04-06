@@ -28,7 +28,7 @@ await build({
   ],
   outDir: "./npm",
   package: {
-    name: "designtokens",
+    name: "@oscarotero/designtokens",
     version: "0.1.0",
     description:
       "Node package to parse and manipulate design tokens following the [DTCG](https://www.designtokens.org/) format.",

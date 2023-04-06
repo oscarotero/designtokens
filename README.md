@@ -5,6 +5,22 @@ Deno and Node library to parse, manipulate and transform tokens format as
 
 - [Current spec](https://design-tokens.github.io/community-group/format/)
 
+## Setting up
+
+This package is available on NPM as
+[@oscarotero/designtokens](https://www.npmjs.com/package/@oscarotero/designtokens)
+
+```
+npm install @oscarotero/designtokens
+```
+
+On Deno, you can import it from
+[deno.land/x/designtokens](https://deno.land/x/designtokens):
+
+```js
+import designtokens from "https://deno.land/x/designtokens@v0.1.0/mod.ts";
+```
+
 ## Usage
 
 ```js
