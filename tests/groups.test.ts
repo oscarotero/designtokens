@@ -5,18 +5,26 @@ import json from "./assets/groups.tokens.json" assert { type: "json" };
 Deno.test("Parse arbitrary nested groups", () => {
   const tokens = parse(json);
 
-  assertEquals(tokens.get("token uno")?.value, "token value 1");
+  assertEquals(tokens.get("token one")?.value, "token value 1");
   assertEquals(
-    tokens.get("token group.token dos")?.value,
+    tokens.get("token group.token two")?.value,
     "token value 2",
   );
   assertEquals(
-    tokens.get("token group.nested token group.token tres")?.value,
+    tokens.get("token group.nested token group.token three")?.value,
     "token value 3",
   );
   assertEquals(
-    tokens.get("token group.nested token group.Token cuatro")?.value,
+    tokens.get("token group.nested token group.Token four")?.value,
     "token value 4",
+  );
+  assertEquals(
+    tokens.get("token group.nested token group.Token four")?.path,
+    "token group.nested token group.Token four",
+  );
+  assertEquals(
+    tokens.get("token group.nested token group.Token four"),
+    tokens.getChild("token group.nested token group.Token four"),
   );
   assertEquals(tokens.children.size, 2);
 });

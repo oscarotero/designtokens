@@ -1,16 +1,16 @@
 {
-  "token uno": {
+  "token one": {
     "$value": "token value 1"
   },
   "token group": {
-    "token dos": {
+    "token two": {
       "$value": "token value 2"
     },
     "nested token group": {
-      "token tres": {
+      "token three": {
         "$value": "token value 3"
       },
-      "Token cuatro": {
+      "Token four": {
         "$value": "token value 4"
       }
     }
